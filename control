@@ -7,3 +7,6 @@ Maintainer: biD3V
 Author: biD3V
 Section: Tweaks
 Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 13.0)
+Depiction: https://bid3v.github.io/repo/depictions/electrode.html
+Icon: https://bid3v.github.io/repo/icons/Electrode.png
+Sileodepiction: https://bid3v.github.io/repo/depictions/sileo/electrode.json
