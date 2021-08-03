@@ -1,0 +1,9 @@
+Package: com.bid3v.electrode
+Name: Electrode
+Version: 1.0.0
+Architecture: iphoneos-arm
+Description: Charging and low power mode toasts!
+Maintainer: biD3V
+Author: biD3V
+Section: Tweaks
+Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 13.0)
