@@ -31,6 +31,11 @@ static void reloadPrefs() {
     autoHideLP = [prefs[@"autoHideLP"] boolValue];
 }
 
+static NSString * EDLocalizedString(NSString *key) {
+	NSBundle *ElectrodeBundle = [NSBundle bundleWithPath:@"Library/Application Support/Electrode.bundle"];
+	return [ElectrodeBundle localizedStringForKey:key value:@"" table:nil];
+}
+
 // TODO: Custom Window
 // %hook SpringBoard
 // %property (nonatomic,strong) UIWindow * testWindow;
@@ -50,7 +55,7 @@ static void reloadPrefs() {
 - (void)activateAlertItem:(id)item animated:(BOOL)animated {
 	if ([item isKindOfClass:[%c(SBLowPowerAlertItem) class]]) {
 		BCBatteryDevice *battery = [BCBatteryDeviceController sharedInstance].connectedDevices[0];
-		UIToastView *toast = [[UIToastView alloc] initToastWithTitle:@"Low Battery" subtitle:[NSString stringWithFormat:@"%ld%% battery remaining", battery.percentCharge] autoHidden:autoHideLP];
+		UIToastView *toast = [[UIToastView alloc] initToastWithTitle:EDLocalizedString(@"LOW_BATTERY") subtitle:[NSString stringWithFormat:EDLocalizedString(@"BATT_REMAINING"), battery.percentCharge] autoHidden:autoHideLP];
 		[toast presentToast];
         [(SBLowPowerAlertItem *)item _enableLowPowerMode];
 		return;
@@ -65,7 +70,7 @@ static void reloadPrefs() {
 	%orig;
 	if ([self isOnAC]) {
 		BCBatteryDevice *battery = [BCBatteryDeviceController sharedInstance].connectedDevices[0];
-		UIToastView *toast = [[UIToastView alloc] initToastWithTitle:@"Charging" subtitle:[NSString stringWithFormat:@"%ld%%", battery.percentCharge] autoHidden:true];
+		UIToastView *toast = [[UIToastView alloc] initToastWithTitle:EDLocalizedString(@"CHARGING") subtitle:[NSString stringWithFormat:@"%ld%%", battery.percentCharge] autoHidden:true];
 		[toast presentToast];
         NSLog(@"[Electrode] Charging toast presented");
 	}

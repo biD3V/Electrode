@@ -1,0 +1,5 @@
+{
+    "CHARGING" = "Charging";
+    "LOW_BATTERY" = "Low Battery";
+    "BATT_REMAINING" = "%ld%% battery remaining";
+}
