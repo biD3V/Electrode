@@ -1,6 +1,6 @@
 Package: com.bid3v.electrode
 Name: Electrode
-Version: 1.0.0
+Version: 1.0.1
 Architecture: iphoneos-arm
 Description: Charging and low power mode toasts!
 Maintainer: biD3V
