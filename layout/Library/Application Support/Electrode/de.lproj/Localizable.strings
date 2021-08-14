@@ -1,0 +1,5 @@
+{
+    "CHARGING" = "Lädt";
+    "LOW_BATTERY" = "Batterie fast leer";
+    "BATT_REMAINING" = "Noch %ld%%";
+}

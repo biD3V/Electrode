@@ -1,15 +1,21 @@
 #import <UIKit/UIKit.h>
 #import <SpringBoard/SpringBoard.h>
 #import <SpringBoardUI/SBLowPowerAlertItem.h>
-#import "UIToastView.h"
+#import <SpringBoard/SBAlertItemsController.h>
+#import <SpringBoard/SBDefaultIconModelStore.h>
+#import "UIToastWindow.h"
+#import "UIBatteryToastView.h"
 
-// @interface SpringBoard (TestWindow)
+@interface SpringBoard (Electrode)
 
-// @property (nonatomic,strong) UIWindow * testWindow;
+@property (nonatomic,strong) UIWindow * toastWindow;
 
-// @end
+@end
 
 BOOL autoHideLP;
+BOOL autoHideCHRG;
+BOOL autoLP;
+NSArray<NSNumber *> *percentages;
 
 static void reloadPrefs() {
     // Check if system app (all system apps have this as their home directory). This path may change but it's unlikely.
@@ -28,36 +34,52 @@ static void reloadPrefs() {
         prefs = [NSDictionary dictionaryWithContentsOfFile:@"/User/Library/Preferences/com.bid3v.electrodeprefs.plist"];
     }
 
-    autoHideLP = [prefs[@"autoHideLP"] boolValue];
+    autoHideLP = prefs[@"autoHideLP"] ? [prefs[@"autoHideLP"] boolValue] : false;
+    autoHideCHRG = prefs[@"autoHideCHRG"] ? [prefs[@"autoHideCHRG"] boolValue] : true;
+    autoLP = prefs[@"autoLP"] ? [prefs[@"autoLP"] boolValue] : true;
+    percentages = prefs[@"percentages"];
 }
 
 static NSString * EDLocalizedString(NSString *key) {
-	NSBundle *ElectrodeBundle = [NSBundle bundleWithPath:@"Library/Application Support/Electrode.bundle"];
+	NSBundle *ElectrodeBundle = [NSBundle bundleWithPath:@"Library/Application Support/Electrode"];
 	return [ElectrodeBundle localizedStringForKey:key value:@"" table:nil];
 }
 
-// TODO: Custom Window
-// %hook SpringBoard
-// %property (nonatomic,strong) UIWindow * testWindow;
+%hook SpringBoard
+%property (nonatomic,strong) UIToastWindow * toastWindow;
 
-// - (void)applicationDidFinishLaunching:(UIApplication *)application {
-//     %orig;
-//     self.testWindow = [[UIWindow alloc] initWithFrame:CGRectMake(0,0,100,100)];
-//     self.testWindow.backgroundColor = [UIColor redColor];
-//     self.testWindow.windowLevel = UIWindowLevelStatusBar;
-//     [self.testWindow makeKeyAndVisible];
-// }
+- (void)applicationDidFinishLaunching:(UIApplication *)application {
+    %orig;
+    self.toastWindow = [UIToastWindow sharedWindow];
+    self.toastWindow.frame = [UIScreen mainScreen].bounds;
+    self.toastWindow.backgroundColor = UIColor.clearColor;
+    self.toastWindow.windowLevel = UIWindowLevelStatusBar;
+    [self.toastWindow makeKeyAndVisible];
 
-// %end
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(checkLevel)
+                                                 name:UIDeviceBatteryLevelDidChangeNotification
+                                               object:nil];
+}
+
+%new
+- (void)checkLevel {
+    if ([UIDevice currentDevice].batteryState != UIDeviceBatteryStateUnplugged) return;
+    for (NSNumber *percent in percentages) {
+        if (([UIDevice currentDevice].batteryLevel * 100) == percent.floatValue) [[%c(SBAlertItemsController) sharedInstance] activateAlertItem:[%c(SBLowPowerAlertItem) new]];
+    }
+}
+
+%end
 
 // TODO: Find system notification for LP Alert and charging
 %hook SBAlertItemsController
 - (void)activateAlertItem:(id)item animated:(BOOL)animated {
 	if ([item isKindOfClass:[%c(SBLowPowerAlertItem) class]]) {
 		BCBatteryDevice *battery = [BCBatteryDeviceController sharedInstance].connectedDevices[0];
-		UIToastView *toast = [[UIToastView alloc] initToastWithTitle:EDLocalizedString(@"LOW_BATTERY") subtitle:[NSString stringWithFormat:EDLocalizedString(@"BATT_REMAINING"), battery.percentCharge] autoHidden:autoHideLP];
+		UIBatteryToastView *toast = [[UIBatteryToastView alloc] initToastWithTitle:EDLocalizedString(@"LOW_BATTERY") subtitle:[NSString stringWithFormat:EDLocalizedString(@"BATT_REMAINING"), battery.percentCharge] autoHidden:autoHideLP];
 		[toast presentToast];
-        [(SBLowPowerAlertItem *)item _enableLowPowerMode];
+        if (autoLP) [(SBLowPowerAlertItem *)item _enableLowPowerMode];
 		return;
 	}
 	%orig;
@@ -70,7 +92,7 @@ static NSString * EDLocalizedString(NSString *key) {
 	%orig;
 	if ([self isOnAC]) {
 		BCBatteryDevice *battery = [BCBatteryDeviceController sharedInstance].connectedDevices[0];
-		UIToastView *toast = [[UIToastView alloc] initToastWithTitle:EDLocalizedString(@"CHARGING") subtitle:[NSString stringWithFormat:@"%ld%%", battery.percentCharge] autoHidden:true];
+		UIBatteryToastView *toast = [[UIBatteryToastView alloc] initToastWithTitle:EDLocalizedString(@"CHARGING") subtitle:[NSString stringWithFormat:@"%ld%%", battery.percentCharge] autoHidden:autoHideCHRG];
 		[toast presentToast];
         NSLog(@"[Electrode] Charging toast presented");
 	}

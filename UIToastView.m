@@ -2,18 +2,15 @@
 
 @implementation UIToastView // TODO: Make modular and a subclass
 
-- (UIToastView *)initToastWithTitle:(NSString *)title subtitle:(NSString *)subtitle autoHidden:(BOOL)autoHidden {
+- (UIToastView *)initToastWithTitle:(NSString *)title subtitle:(NSString *)subtitle image:(UIImage *)image autoHidden:(BOOL)autoHidden {
     self = [super initWithFrame:CGRectZero];
-
-    // Check if there is a view controller
-    // TODO: Create custom UIWindow
-    if (![self getTopViewController].view) return self;
 
     [self setUpBackground];
 
     self.autoHide = autoHidden;
+    self.displayTime = 1.0;
 
-    [[self getTopViewController].view addSubview:self];
+    [[UIToastWindow sharedWindow] addSubview:self];
 
     // Set hidden position
     self.initialTransform = CGAffineTransformMakeTranslation(0, -100);
@@ -21,10 +18,11 @@
     self.container = [UIView new];
     [self addSubview:self.container];
 
-    // Device Image
-    self.deviceImage = [[UIImageView alloc] initWithImage:[[BCBatteryDeviceController sharedInstance].connectedDevices[0] batteryWidgetGlyph]];
-    self.deviceImage.tintColor = [UIColor labelColor];
-    [self.container addSubview:self.deviceImage]; // Outside of stack view to center it on the leading containter edge
+    if (image) {
+        self.toastImage = [[UIImageView alloc] initWithImage:image];
+        self.toastImage.tintColor = [UIColor labelColor];
+        [self.container addSubview:self.toastImage]; // Outside of stack view to center it on the leading containter edge
+    }
 
     self.hStack = [UIStackView new];
     self.hStack.alignment = UIStackViewAlignmentCenter;
@@ -48,26 +46,12 @@
     [self.vStack addArrangedSubview:self.titleLabel];
     [self.vStack addArrangedSubview:self.subtitleLabel];
 
-    // --- Battery View ---
-    // -- Battery Info --
-    UIDevice *device = [UIDevice currentDevice];
-    device.batteryMonitoringEnabled = true;
-
-    BCBatteryDevice *battery = [BCBatteryDeviceController sharedInstance].connectedDevices[0];
-
-    // -- View --
-    self.batteryView = [[BCUIBatteryView alloc] initWithSizeCategory:1];
-    [self.batteryView setChargePercent:device.batteryLevel];
-    [self.batteryView setChargingState:(device.batteryState == UIDeviceBatteryStateCharging || device.batteryState == UIDeviceBatteryStateFull) ? 1 : 0];
-    [self.batteryView setShowsInlineChargingIndicator:(device.batteryState == UIDeviceBatteryStateCharging || device.batteryState == UIDeviceBatteryStateFull)];
-    [self.batteryView setLowBattery:battery.lowBattery];
-    [self.hStack addArrangedSubview:self.batteryView];
-
     [self addSubview:self.hStack];
 
     // For hiding when auto-hide is disabled
-    UITapGestureRecognizer *tapGuesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(hide)];
-    [self addGestureRecognizer:tapGuesture];
+    UISwipeGestureRecognizer *swipeGuesture = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(hide)];
+    swipeGuesture.direction = UISwipeGestureRecognizerDirectionUp;
+    [self addGestureRecognizer:swipeGuesture];
 
     [self setupConstraints];
     [self setupStackViewContraints];
@@ -75,6 +59,10 @@
     self.transform = self.initialTransform;
 
     return self;
+}
+
+- (UIToastView *)initToastWithTitle:(NSString *)title subtitle:(NSString *)subtitle autoHidden:(BOOL)autoHidden {
+    return [self initToastWithTitle:title subtitle:subtitle image:nil autoHidden:autoHidden];
 }
 
 - (void)setUpBackground {
@@ -105,7 +93,7 @@
                          self.transform = CGAffineTransformIdentity;
                      }
                      completion:^(BOOL finished){
-                         if (self.autoHide) [self hideAfter:1.0];
+                         if (self.autoHide) [self hideAfter:self.displayTime];
                      }];
 }
 
@@ -142,29 +130,30 @@
 
 - (void)setupStackViewContraints {
     [self.hStack setTranslatesAutoresizingMaskIntoConstraints:false];
-    [self.deviceImage setTranslatesAutoresizingMaskIntoConstraints:false];
+    [self.toastImage setTranslatesAutoresizingMaskIntoConstraints:false];
     [self.container setTranslatesAutoresizingMaskIntoConstraints:false];
+
+    if (self.toastImage) {
+        [NSLayoutConstraint activateConstraints:@[
+            [self.toastImage.heightAnchor constraintEqualToAnchor:self.vStack.heightAnchor],
+            [self.toastImage.centerXAnchor constraintEqualToAnchor:self.container.leadingAnchor],
+            [self.toastImage.centerYAnchor constraintEqualToAnchor:self.container.centerYAnchor],
+            [self.toastImage.widthAnchor constraintEqualToAnchor:self.toastImage.heightAnchor multiplier:(self.toastImage.image.size.width / self.toastImage.image.size.height)],
+            [self.hStack.leadingAnchor constraintEqualToAnchor:self.toastImage.trailingAnchor constant:8],
+        ]];
+    } else {
+        [self.hStack.leadingAnchor constraintEqualToAnchor:self.container.leadingAnchor].active = true;
+    }
 
     [NSLayoutConstraint activateConstraints:@[
         [self.container.leadingAnchor constraintEqualToAnchor:self.leadingAnchor constant:24],
         [self.container.trailingAnchor constraintEqualToAnchor:self.trailingAnchor constant:-24],
         [self.container.topAnchor constraintEqualToAnchor:self.topAnchor constant:8],
         [self.container.bottomAnchor constraintEqualToAnchor:self.bottomAnchor constant:-8],
-        [self.deviceImage.heightAnchor constraintEqualToAnchor:self.vStack.heightAnchor],
-        [self.deviceImage.widthAnchor constraintEqualToAnchor:self.deviceImage.heightAnchor multiplier:(self.deviceImage.image.size.width / self.deviceImage.image.size.height)],
-        [self.deviceImage.centerXAnchor constraintEqualToAnchor:self.container.leadingAnchor],
-        [self.deviceImage.centerYAnchor constraintEqualToAnchor:self.container.centerYAnchor],
-        [self.hStack.leadingAnchor constraintEqualToAnchor:self.deviceImage.trailingAnchor constant:8],
         [self.hStack.trailingAnchor constraintEqualToAnchor:self.container.trailingAnchor],
         [self.hStack.topAnchor constraintEqualToAnchor:self.container.topAnchor],
         [self.hStack.bottomAnchor constraintEqualToAnchor:self.container.bottomAnchor]
     ]];
-}
-
-- (UIViewController *)getTopViewController {
-    UIWindow *keyWindow = [UIApplication sharedApplication].keyWindow;
-
-    return keyWindow.rootViewController;
 }
 
 - (void)layoutSubviews {

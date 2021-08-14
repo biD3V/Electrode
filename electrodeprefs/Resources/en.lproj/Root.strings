@@ -1,3 +1,6 @@
 {
-    "AUTO_HIDE_LP" = "Auto-hide Low Power Toast";
+    "TOASTS" = "Toasts";
+    "LP_TOAST" = "Low Power Toast";
+    "CHRG_TOAST" = "Charging Toast";
+    "CUSTOM_ALERTS" = "Custom Alert Percentages";
 }

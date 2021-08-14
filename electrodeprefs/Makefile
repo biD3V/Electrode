@@ -5,7 +5,7 @@ include $(THEOS)/makefiles/common.mk
 
 BUNDLE_NAME = ElectrodePrefs
 
-ElectrodePrefs_FILES = EDPRootListController.m
+ElectrodePrefs_FILES = $(wildcard *.m)
 ElectrodePrefs_FRAMEWORKS = UIKit
 ElectrodePrefs_PRIVATE_FRAMEWORKS = Preferences
 ElectrodePrefs_INSTALL_PATH = /Library/PreferenceBundles

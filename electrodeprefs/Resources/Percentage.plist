@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>items</key>
+	<array>
+		<dict>
+			<key>cell</key>
+			<string>PSEditTextCell</string>
+			<key>defaults</key>
+			<string>com.bid3v.electrodeprefs</string>
+			<key>set</key>
+			<string>addLevel:forSpecifier:</string>
+			<key>key</key>
+			<string>newPercent</string>
+            <key>id</key>
+            <string>newPercent</string>
+            <key>placeholder</key>
+            <string>20</string>
+            <key>keyboard</key>
+            <string>numbers</string>
+            <!-- <key>isNumeric</key>
+            <true/> Doesn't allow dismissal of keyboard -->
+			<key>label</key>
+			<string>ADD_PERCENT</string>
+			<key>PostNotification</key>
+			<string>com.bid3v.electrode/prefs.changed</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+		</dict>
+	</array>
+</dict>
+</plist>
