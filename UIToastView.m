@@ -10,7 +10,7 @@
     self.autoHide = autoHidden;
     self.displayTime = 1.0;
 
-    [[UIToastWindow sharedWindow] addSubview:self];
+    [[UIToastWindow sharedWindow].rootViewController.view addSubview:self];
 
     // Set hidden position
     self.initialTransform = CGAffineTransformMakeTranslation(0, -100);
@@ -49,9 +49,8 @@
     [self addSubview:self.hStack];
 
     // For hiding when auto-hide is disabled
-    UISwipeGestureRecognizer *swipeGuesture = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(hide)];
-    swipeGuesture.direction = UISwipeGestureRecognizerDirectionUp;
-    [self addGestureRecognizer:swipeGuesture];
+    UITapGestureRecognizer *tapGuesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(hide)];
+    [self addGestureRecognizer:tapGuesture];
 
     [self setupConstraints];
     [self setupStackViewContraints];
@@ -63,6 +62,14 @@
 
 - (UIToastView *)initToastWithTitle:(NSString *)title subtitle:(NSString *)subtitle autoHidden:(BOOL)autoHidden {
     return [self initToastWithTitle:title subtitle:subtitle image:nil autoHidden:autoHidden];
+}
+
+- (UIToastView *)initToastWithTitle:(NSString *)title autoHidden:(BOOL)autoHidden {
+    return [self initToastWithTitle:title subtitle:nil autoHidden:autoHidden];
+}
+
+- (UIToastView *)initToastWithTitle:(NSString *)title image:(UIImage *)image autoHidden:(BOOL)autoHidden {
+    return [self initToastWithTitle:title subtitle:nil image:image autoHidden:autoHidden];
 }
 
 - (void)setUpBackground {
@@ -120,12 +127,18 @@
 
     [NSLayoutConstraint activateConstraints:@[
         [self.centerXAnchor constraintEqualToAnchor:self.superview.centerXAnchor],
-        [self.topAnchor constraintEqualToAnchor:self.superview.layoutMarginsGuide.topAnchor],
         [self.bottomAnchor constraintLessThanOrEqualToAnchor:self.superview.layoutMarginsGuide.bottomAnchor constant:-8],
         [self.leadingAnchor constraintGreaterThanOrEqualToAnchor:self.superview.leadingAnchor constant:8],
         [self.trailingAnchor constraintLessThanOrEqualToAnchor:self.superview.trailingAnchor constant:-8],
         [self.heightAnchor constraintGreaterThanOrEqualToConstant:50]
     ]];
+
+    [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
+    if ([UIDevice currentDevice].userInterfaceIdiom != UIUserInterfaceIdiomPad && UIDeviceOrientationIsLandscape([UIDevice currentDevice].orientation)) {
+        [self.topAnchor constraintEqualToAnchor:self.superview.layoutMarginsGuide.topAnchor constant:8].active = true;
+    } else {
+        [self.topAnchor constraintEqualToAnchor:self.superview.layoutMarginsGuide.topAnchor].active = true;
+    }
 }
 
 - (void)setupStackViewContraints {
@@ -158,7 +171,7 @@
 
 - (void)layoutSubviews {
     [super layoutSubviews];
-    self.shadowView.materialView.layer.cornerRadius = self.bounds.size.height / 2.0; // Why doesn't the native method do this?
+    self.shadowView.materialView.layer.cornerRadius = self.bounds.size.height / 2.0;
 }
 
 @end
