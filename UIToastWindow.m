@@ -16,6 +16,7 @@
     self.frame = [UIScreen mainScreen].bounds;
     self.backgroundColor = UIColor.clearColor;
     self.windowLevel = UIWindowLevelStatusBar;
+    self.layer.masksToBounds = true;
     self.rootViewController = [NSClassFromString(@"SBFTouchPassThroughViewController") new];
     return self;
 }

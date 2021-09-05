@@ -46,8 +46,6 @@
     [self.vStack addArrangedSubview:self.titleLabel];
     [self.vStack addArrangedSubview:self.subtitleLabel];
 
-    [self addSubview:self.hStack];
-
     // For hiding when auto-hide is disabled
     UITapGestureRecognizer *tapGuesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(hide)];
     [self addGestureRecognizer:tapGuesture];
@@ -155,7 +153,9 @@
             [self.hStack.leadingAnchor constraintEqualToAnchor:self.toastImage.trailingAnchor constant:8],
         ]];
     } else {
-        [self.hStack.leadingAnchor constraintEqualToAnchor:self.container.leadingAnchor].active = true;
+        NSLayoutConstraint *stackLeading = [self.hStack.leadingAnchor constraintEqualToAnchor:self.container.leadingAnchor];
+        stackLeading.active = true;
+        stackLeading.priority = 750;
     }
 
     [NSLayoutConstraint activateConstraints:@[

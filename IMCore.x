@@ -1,6 +1,10 @@
 #import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 #import <IMCore/IMHandle.h>
+#import <Contacts/CNContact.h>
+#import <ContactsUI/CNAvatarView.h>
 #import "UIToastView.h"
+#import "PrivateHeaders.h"
 
 @interface IMItem : NSObject
 
@@ -13,15 +17,6 @@
 
 @interface IMMessageItem : IMItem
 
-@end
-
-@interface IMMessageItem (Electrode)
-
-@property (nonatomic,retain) UIToastView *toast;
-
-@end
-
-@interface NSDistributedNotificationCenter : NSNotificationCenter
 @end
 
 %hook IMDaemonController
@@ -37,7 +32,6 @@
 %end
 
 %hook IMMessageItem
-%property (nonatomic,retain) UIToastView *toast;
 
 - (bool)isCancelTypingMessage {
     bool orig = %orig;
@@ -58,10 +52,7 @@
         NSLog(@"[Electrode] %@ started typing.", [self _senderHandle].name);
         [[NSDistributedNotificationCenter defaultCenter] postNotificationName:@"com.bid3v.electrode.senderStartedTyping"
                                                                        object:nil
-                                                                     userInfo:@{
-                                                                         @"name": [self _senderHandle].name,
-                                                                         @"contact": self.cnContact
-                                                                     }];
+                                                                     userInfo:@{@"identifier": [self _senderHandle].ID}];
     }
 
     return orig;
@@ -75,10 +66,7 @@
         NSLog(@"[Electrode] %@ started typing.", [self _senderHandle].name);
         [[NSDistributedNotificationCenter defaultCenter] postNotificationName:@"com.bid3v.electrode.senderStartedTyping"
                                                                        object:nil
-                                                                     userInfo:@{
-                                                                         @"name": [self _senderHandle].name,
-                                                                         @"contact": self.cnContact
-                                                                     }];
+                                                                     userInfo:@{@"identifier": [self _senderHandle].ID}];
     }
 
     return orig;

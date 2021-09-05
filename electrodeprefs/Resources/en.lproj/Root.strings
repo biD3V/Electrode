@@ -3,4 +3,6 @@
     "LP_TOAST" = "Low Power Toast";
     "CHRG_TOAST" = "Charging Toast";
     "CUSTOM_ALERTS" = "Custom Alert Percentages";
+    "EXPERIEMENTAL" = "Experimental";
+    "TYPING_TOASTS" = "Typing Toasts";
 }

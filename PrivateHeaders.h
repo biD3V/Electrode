@@ -17,3 +17,6 @@
 - (BOOL)setPowerMode:(NSInteger)powerMode error:(id*)error;
 
 @end
+
+@interface NSDistributedNotificationCenter : NSNotificationCenter
+@end

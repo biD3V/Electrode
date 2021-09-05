@@ -10,4 +10,9 @@
 	return _specifiers;
 }
 
+- (void)testChargeToast {
+	[[NSDistributedNotificationCenter defaultCenter] postNotificationName:@"com.bid3v.electrode.chargeTest"
+                                                                   object:nil];
+}
+
 @end

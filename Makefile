@@ -7,9 +7,9 @@ include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = Electrode
 
-Electrode_FILES = Tweak.x UIToastView.m UIToastWindow.m UIBatteryToastView.m IMCore.x
+Electrode_FILES = Tweak.x UIToastView.m UIToastWindow.m UIBatteryToastView.m UITypingToastView.m IMCore.x
 Electrode_FRAMEWORKS = UIKit CoreGraphics
-Electrode_PRIVATE_FRAMEWORKS = MaterialKit UIKitCore BatteryCenter BatteryCenterUI
+Electrode_PRIVATE_FRAMEWORKS = MaterialKit UIKitCore BatteryCenter BatteryCenterUI Contacts ContactsUI IMCore
 Electrode_CFLAGS = -fobjc-arc -Wno-deprecated-declarations
 
 include $(THEOS_MAKE_PATH)/tweak.mk

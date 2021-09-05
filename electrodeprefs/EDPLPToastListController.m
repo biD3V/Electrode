@@ -10,4 +10,9 @@
 	return _specifiers;
 }
 
+- (void)testLowPowerToast {
+	[[NSDistributedNotificationCenter defaultCenter] postNotificationName:@"com.bid3v.electrode.lpTest"
+                                                                   object:nil];
+}
+
 @end

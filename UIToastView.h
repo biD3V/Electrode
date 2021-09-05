@@ -21,7 +21,7 @@
 - (UIToastView *)initToastWithTitle:(NSString *)title subtitle:(NSString *)subtitle image:(UIImage *)image autoHidden:(BOOL)autoHidden;
 - (UIToastView *)initToastWithTitle:(NSString *)title subtitle:(NSString *)subtitle autoHidden:(BOOL)autoHidden;
 - (UIToastView *)initToastWithTitle:(NSString *)title autoHidden:(BOOL)autoHidden;
-- (UIToastView *)initToastWithTitle:(NSString *)title image:(UIImage *)image autoHidden:(BOOL)autoHidden
+- (UIToastView *)initToastWithTitle:(NSString *)title image:(UIImage *)image autoHidden:(BOOL)autoHidden;
 - (void)setUpBackground;
 - (void)presentToast;
 - (void)hide;

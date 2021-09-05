@@ -1,4 +1,5 @@
 {
     "CHRG_TOAST" = "Charging Toast";
     "AUTO_HIDE" = "Auto-hide Toast";
+    "DISPLAY_TIME" = "Display Time";
 }

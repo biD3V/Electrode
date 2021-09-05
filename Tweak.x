@@ -5,26 +5,14 @@
 #import <SpringBoard/SBDefaultIconModelStore.h>
 #import "UIToastWindow.h"
 #import "UIBatteryToastView.h"
-
-#import <IMCore/IMChatRegistry.h>
-#import <IMCore/IMChat.h>
-#import <IMCore/IMAccountController.h>
-#import <IMCore/IMAccount.h>
-#import <IMCore/IMHandle.h>
-#import <IMCore/IMMessage.h>
-#import <IMCore/IMDaemonController.h>
+#import "UITypingToastView.h"
 
 #import "dlfcn.h"
 
-@interface NSDistributedNotificationCenter : NSNotificationCenter
-@end
-
 @interface SpringBoard (Electrode)
 
-@property (nonatomic,strong) UIWindow * toastWindow;
+@property (nonatomic,strong) UIToastWindow * toastWindow;
 @property (nonatomic,strong) NSMutableArray<NSNumber *> *alertedPercents;
-
-- (void)presentTypingToast:(NSString *)name;
 
 @end
 
@@ -34,6 +22,7 @@ BOOL autoLP;
 NSArray<NSNumber *> *percentages;
 CGFloat chargeDelay;
 CGFloat lpDelay;
+BOOL typing;
 
 static NSBundle *ElectrodeBundle;
 
@@ -57,9 +46,10 @@ static void reloadPrefs() {
     autoHideLP = prefs[@"autoHideLP"] ? [prefs[@"autoHideLP"] boolValue] : false;
     autoHideCHRG = prefs[@"autoHideCHRG"] ? [prefs[@"autoHideCHRG"] boolValue] : true;
     autoLP = prefs[@"autoLP"] ? [prefs[@"autoLP"] boolValue] : true;
-    percentages = prefs[@"percentages"];
+    percentages = prefs[@"percentages"] ?: [NSArray new];
     chargeDelay = prefs[@"chargeDelay"] ? [prefs[@"chargeDelay"] floatValue] : 1.0;
     lpDelay = prefs[@"lpDelay"] ? [prefs[@"lpDelay"] floatValue] : 1.0;
+    typing = prefs[@"typing"] ? [prefs[@"typing"] boolValue] : false;
 }
 
 %hook SpringBoard
@@ -69,10 +59,7 @@ static void reloadPrefs() {
 - (void)applicationDidFinishLaunching:(UIApplication *)application {
     %orig;
     self.alertedPercents = [NSMutableArray new];
-    self.toastWindow = [UIToastWindow sharedWindow];
-    self.toastWindow.frame = [UIScreen mainScreen].bounds;
-    self.toastWindow.backgroundColor = UIColor.clearColor;
-    self.toastWindow.windowLevel = UIWindowLevelStatusBar;
+    self.toastWindow = (UIToastWindow *)[UIToastWindow sharedWindow];
     [self.toastWindow makeKeyAndVisible];
 
     [[NSNotificationCenter defaultCenter] addObserver:self
@@ -86,10 +73,8 @@ static void reloadPrefs() {
                                                                  object:nil
                                                                   queue:[NSOperationQueue mainQueue]
                                                              usingBlock:^(NSNotification *notif){
-                                                                 if (!typingToast) {
-                                                                     typingToast = [[UIToastView alloc] initToastWithTitle:[NSString stringWithFormat:@"%@ is typing...", notif.userInfo[@"name"]]
-                                                                                                                 image:[[CNAvatarView alloc] initWithContact:(CNContact *)notif.userInfo[@"contact"]].contentImage
-                                                                                                            autoHidden:false];
+                                                                 if (!typingToast && typing) {
+                                                                     typingToast = [[UITypingToastView alloc] initWithID:notif.userInfo[@"identifier"]];
                                                                      [typingToast presentToast];
                                                                  }
                                                              }];
@@ -97,30 +82,53 @@ static void reloadPrefs() {
                                                                  object:nil
                                                                   queue:[NSOperationQueue mainQueue]
                                                              usingBlock:^(NSNotification *notif){
-                                                                 if (typingToast) {
+                                                                 if (typingToast && typing) {
                                                                      [typingToast hide];
                                                                      typingToast = nil;
                                                                  }
+                                                             }];
+    [[NSDistributedNotificationCenter defaultCenter] addObserverForName:@"com.bid3v.electrode.chargeTest"
+                                                                 object:nil
+                                                                  queue:[NSOperationQueue mainQueue]
+                                                             usingBlock:^(NSNotification *notif){
+                                                                 [[UIDevice currentDevice] setBatteryMonitoringEnabled:true];
+                                                                 UIBatteryToastView *toast = [[UIBatteryToastView alloc] initToastWithTitle:[ElectrodeBundle localizedStringForKey:@"CHARGING" value:@"Charging" table:nil]
+                                                                                                                                   subtitle:[NSString stringWithFormat:@"%g%%", [UIDevice currentDevice].batteryLevel * 100.0]
+                                                                                                                                 autoHidden:autoHideCHRG];
+                                                                 toast.displayTime = chargeDelay;
+                                                                 [toast presentToast];
+                                                             }];
+    [[NSDistributedNotificationCenter defaultCenter] addObserverForName:@"com.bid3v.electrode.lpTest"
+                                                                 object:nil
+                                                                  queue:[NSOperationQueue mainQueue]
+                                                             usingBlock:^(NSNotification *notif){
+                                                                 [[UIDevice currentDevice] setBatteryMonitoringEnabled:true];
+                                                                 UIBatteryToastView *toast = [[UIBatteryToastView alloc] initToastWithTitle:[ElectrodeBundle localizedStringForKey:@"LOW_BATTERY" value:@"Low Battery" table:nil]
+                                                                                                                                   subtitle:[NSString stringWithFormat:[ElectrodeBundle localizedStringForKey:@"BATT_REMAINING" value:@"%g%% battery remaining" table:nil], [UIDevice currentDevice].batteryLevel * 100.0]
+                                                                                                                                 autoHidden:autoHideLP];
+                                                                 toast.displayTime = lpDelay;
+                                                                 [toast presentToast];
                                                              }];
 }
 
 %new
 - (void)checkLevel {
     [[UIDevice currentDevice] setBatteryMonitoringEnabled:true];
-    //if ([UIDevice currentDevice].batteryState != UIDeviceBatteryStateUnplugged) return;
-    for (NSNumber *percent in percentages) {
-        if (([UIDevice currentDevice].batteryLevel * 100) <= percent.floatValue && ![self.alertedPercents containsObject:percent]) {
-            [[%c(SBAlertItemsController) sharedInstance] activateAlertItem:[%c(SBLowPowerAlertItem) new]];
-            [self.alertedPercents addObject:percent];
-            return;
+    if ([UIDevice currentDevice].batteryState == UIDeviceBatteryStateUnplugged) {
+        for (NSNumber *percent in percentages) {
+            if (([UIDevice currentDevice].batteryLevel * 100) <= percent.floatValue && ![self.alertedPercents containsObject:percent]) {
+                [[%c(SBAlertItemsController) sharedInstance] activateAlertItem:[%c(SBLowPowerAlertItem) new]];
+                [self.alertedPercents addObject:percent];
+                return;
+            }
+        }
+    } else {
+        for (NSNumber *percent in percentages) {
+            if (([UIDevice currentDevice].batteryLevel * 100) >= percent.floatValue && [self.alertedPercents containsObject:percent]) {
+                [self.alertedPercents removeObject:percent];
+            }
         }
     }
-}
-
-%new
-- (void)presentTypingToast:(NSString *)name {
-    UIToastView *typingToast = [[UIToastView alloc] initToastWithTitle:name autoHidden:false];
-    [typingToast presentToast];
 }
 
 %end
@@ -129,9 +137,9 @@ static void reloadPrefs() {
 %hook SBAlertItemsController
 - (void)activateAlertItem:(id)item animated:(BOOL)animated {
 	if ([item isKindOfClass:[%c(SBLowPowerAlertItem) class]]) {
-		BCBatteryDevice *battery = [BCBatteryDeviceController sharedInstance].connectedDevices[0];
+		[[UIDevice currentDevice] setBatteryMonitoringEnabled:true];
 		UIBatteryToastView *toast = [[UIBatteryToastView alloc] initToastWithTitle:[ElectrodeBundle localizedStringForKey:@"LOW_BATTERY" value:@"Low Battery" table:nil]
-                                                                          subtitle:[NSString stringWithFormat:[ElectrodeBundle localizedStringForKey:@"BATT_REMAINING" value:@"%ld%% battery remaining" table:nil], battery.percentCharge]
+                                                                          subtitle:[NSString stringWithFormat:[ElectrodeBundle localizedStringForKey:@"BATT_REMAINING" value:@"%g%% battery remaining" table:nil], [UIDevice currentDevice].batteryLevel * 100.0]
                                                                         autoHidden:autoHideLP];
         toast.displayTime = lpDelay;
 		[toast presentToast];
@@ -147,9 +155,9 @@ static void reloadPrefs() {
 - (void)ACPowerChanged {
 	%orig;
 	if ([self isOnAC]) {
-		BCBatteryDevice *battery = [BCBatteryDeviceController sharedInstance].connectedDevices[0];
+		[[UIDevice currentDevice] setBatteryMonitoringEnabled:true];
 		UIBatteryToastView *toast = [[UIBatteryToastView alloc] initToastWithTitle:[ElectrodeBundle localizedStringForKey:@"CHARGING" value:@"Charging" table:nil]
-                                                                          subtitle:[NSString stringWithFormat:@"%ld%%", battery.percentCharge]
+                                                                          subtitle:[NSString stringWithFormat:@"%g%%", [UIDevice currentDevice].batteryLevel * 100.0]
                                                                         autoHidden:autoHideCHRG];
         toast.displayTime = chargeDelay;
 		[toast presentToast];
