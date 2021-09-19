@@ -53,6 +53,9 @@
         [[NSDistributedNotificationCenter defaultCenter] postNotificationName:@"com.bid3v.electrode.senderStartedTyping"
                                                                        object:nil
                                                                      userInfo:@{@"identifier": [self _senderHandle].ID}];
+    } else {
+        [[NSDistributedNotificationCenter defaultCenter] postNotificationName:@"com.bid3v.electrode.senderStartedTyping"
+                                                                       object:nil];
     }
 
     return orig;
