@@ -2,13 +2,13 @@
 
 @implementation UITypingToastView
 
-@synthesize handle, contact, avatar, fetch;
+@synthesize handle, contact, avatar;
 
 - (instancetype)initWithID:(NSString *)ID {
     self.handle = [[IMHandleRegistrar sharedInstance] getIMHandlesForID:ID].firstObject;
     self.contact = handle.cnContact;
 
-    self = [super initToastWithTitle:[NSString stringWithFormat:@"%@ is typing...", self.contact.personName] autoHidden:false];
+    self = [super initToastWithTitle:[NSString stringWithFormat:@"%@ is typing...", self.contact.givenName] autoHidden:false];
 
     self.avatar = [NSClassFromString(@"CNAvatarView") new];
     [self.avatar setContact:self.contact];

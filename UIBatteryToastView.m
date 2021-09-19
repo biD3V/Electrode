@@ -13,7 +13,7 @@
     BCBatteryDevice *battery = [BCBatteryDeviceController sharedInstance].connectedDevices[0];
 
     // -- View --
-    self.batteryView = [[BCUIBatteryView alloc] initWithSizeCategory:1];
+    self.batteryView = [[NSClassFromString(@"BCUIBatteryView") alloc] initWithSizeCategory:1];
     [self.batteryView setChargePercent:device.batteryLevel];
     [self.batteryView setChargingState:(device.batteryState == UIDeviceBatteryStateCharging || device.batteryState == UIDeviceBatteryStateFull) ? 1 : 0];
     [self.batteryView setShowsInlineChargingIndicator:(device.batteryState == UIDeviceBatteryStateCharging || device.batteryState == UIDeviceBatteryStateFull)];

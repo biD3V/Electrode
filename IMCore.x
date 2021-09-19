@@ -53,6 +53,10 @@
         [[NSDistributedNotificationCenter defaultCenter] postNotificationName:@"com.bid3v.electrode.senderStartedTyping"
                                                                        object:nil
                                                                      userInfo:@{@"identifier": [self _senderHandle].ID}];
+    } else {
+        NSLog(@"[Electrode] %@ stopped typing.", [self _senderHandle].name);
+        [[NSDistributedNotificationCenter defaultCenter] postNotificationName:@"com.bid3v.electrode.senderStoppedTyping"
+                                                                       object:nil];
     }
 
     return orig;

@@ -1,0 +1,34 @@
+name: electrode
+id: com.bid3v.electrode
+depends: mobilesubstrate
+architecture: iphoneos-arm
+version: 1.0.3
+description: Charging and low power mode toasts!
+author: biD3V
+section: Tweaks
+
+all:
+  targetvers: 13.0
+
+Electrode:
+  type: tweak
+  archs:
+    - arm64
+    - arm64e
+  for: ios
+  filter:
+    executables:
+      - UIKit
+  files:
+    - IMCore.x
+    - Tweak.x
+    - UIToastView.m
+    - UIToastWindow.m
+    - UIBatteryToastView.m
+    - UITypingToastView.m
+  include:
+    - Include
+  frameworks:
+    - BatteryCenter
+    - IMCore
+    - MaterialKit
